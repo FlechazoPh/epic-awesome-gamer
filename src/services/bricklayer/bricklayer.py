@@ -139,9 +139,7 @@ class CookieManager(AwesomeFreeMan):
         # {{< Done >}}
 
         # {{< Insert Challenger Context >}}
-        ctx = (
-            get_challenge_ctx(silence=silence) if _ctx_session is None else _ctx_session
-        )
+        ctx = get_challenge_ctx(silence=silence) if _ctx_session is None else _ctx_session
         try:
             for _ in range(8):
                 # Enter the account information and jump to the man-machine challenge page.
@@ -226,9 +224,7 @@ class Bricklayer(AwesomeFreeMan):
         """
         page_link = self.URL_FREE_GAME_TEST if page_link is None else page_link
         ctx_cookies = (
-            self.cookie_manager.load_ctx_cookies()
-            if ctx_cookies is None
-            else ctx_cookies
+            self.cookie_manager.load_ctx_cookies() if ctx_cookies is None else ctx_cookies
         )
 
         # [🚀] 验证 COOKIE
@@ -251,9 +247,7 @@ class Bricklayer(AwesomeFreeMan):
 
         # [🚀] 常驻免费（General）周免（Challenge）
         if _ctx_session is None:
-            ctx = (
-                get_challenge_ctx(self.silence) if challenge else get_ctx(self.silence)
-            )
+            ctx = get_challenge_ctx(self.silence) if challenge else get_ctx(self.silence)
         else:
             ctx = _ctx_session
 

@@ -23,9 +23,7 @@ class ToolBox:
     """可移植的工具箱"""
 
     @staticmethod
-    def check_sample_yaml(
-        path_output: str, path_sample: str
-    ) -> Optional[Dict[str, Any]]:
+    def check_sample_yaml(path_output: str, path_sample: str) -> Optional[Dict[str, Any]]:
         """
         检查模板文件是否存在，检查配置文件是否存在，读取系统配置返回
 

@@ -5,8 +5,8 @@
 # Description:
 import asyncio
 import os
-import time
 import sys
+import time
 import urllib.request
 from typing import List, Optional, NoReturn
 
@@ -17,6 +17,7 @@ from selenium.common.exceptions import (
     ElementClickInterceptedException,
     NoSuchElementException,
     StaleElementReferenceException,
+    InvalidCookieDomainException,
 )
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -622,7 +623,10 @@ class AwesomeFreeMan:
     def _reset_page(ctx: Chrome, page_link: str, api_cookies):
         ctx.get(page_link)
         for cookie_dict in api_cookies:
-            ctx.add_cookie(cookie_dict)
+            try:
+                ctx.add_cookie(cookie_dict)
+            except InvalidCookieDomainException:
+                pass
         ctx.get(page_link)
 
     def _login(self, email: str, password: str, ctx: Chrome) -> None:
@@ -645,9 +649,9 @@ class AwesomeFreeMan:
             EC.presence_of_element_located((By.ID, "password"))
         ).send_keys(password)
 
-        WebDriverWait(
-            ctx, 60, ignored_exceptions=ElementClickInterceptedException
-        ).until(EC.element_to_be_clickable((By.ID, "sign-in"))).click()
+        WebDriverWait(ctx, 60, ignored_exceptions=ElementClickInterceptedException).until(
+            EC.element_to_be_clickable((By.ID, "sign-in"))
+        ).click()
 
     def _activate_payment(self, api: Chrome) -> Optional[bool]:
         """

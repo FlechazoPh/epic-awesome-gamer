@@ -50,12 +50,8 @@ class AwesomeFreeGirl:
 
     def _init_workspace(self) -> None:
         """初始化工作目录 缓存游戏商店数据"""
-        self.runtime_workspace = (
-            "." if not os.path.exists(DIR_EXPLORER) else DIR_EXPLORER
-        )
-        self.path_free_games = os.path.join(
-            self.runtime_workspace, self.path_free_games
-        )
+        self.runtime_workspace = "." if not os.path.exists(DIR_EXPLORER) else DIR_EXPLORER
+        self.path_free_games = os.path.join(self.runtime_workspace, self.path_free_games)
 
     def _discovery_free_games(
         self, ctx: Union[ContextManager, Chrome], ctx_cookies: List[dict]
@@ -116,12 +112,7 @@ class AwesomeFreeGirl:
                 name = game_obj.get_attribute("aria-label")
                 url = game_obj.get_attribute("href")
                 self.game_objs.update(
-                    {
-                        self.game_objs.__len__(): {
-                            "name": name.strip(),
-                            "url": url.strip(),
-                        }
-                    }
+                    {self.game_objs.__len__(): {"name": name.strip(), "url": url.strip()}}
                 )
 
             # 页面跳转判断
