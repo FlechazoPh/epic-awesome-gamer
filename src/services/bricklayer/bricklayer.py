@@ -4,6 +4,7 @@
 # Github     : https://github.com/QIN2DIM
 # Description:
 import os.path
+import time
 from hashlib import sha256
 from typing import List, Optional
 
@@ -25,6 +26,7 @@ from .exceptions import (
     PaymentException,
     AuthException,
     UnableToGet,
+    LoginException,
 )
 
 
@@ -145,6 +147,12 @@ class CookieManager(AwesomeFreeMan):
                 # Enter the account information and jump to the man-machine challenge page.
                 self._login(self.email, self.password, ctx=ctx)
 
+                # Determine whether the account information is filled in correctly.
+                if self.assert_.login_error(ctx):
+                    raise LoginException(
+                        f"登录异常 Alert『{self.assert_.get_login_error_msg(ctx)}』"
+                    )
+
                 # Assert if you are caught in a man-machine challenge.
                 try:
                     fallen = self._armor.fall_in_captcha_login(ctx=ctx)
@@ -205,7 +213,7 @@ class Bricklayer(AwesomeFreeMan):
 
     def get_free_game(
         self,
-        page_link: str = None,
+        page_link: str,
         ctx_cookies: List[dict] = None,
         refresh: bool = True,
         challenge: Optional[bool] = None,
@@ -222,7 +230,6 @@ class Bricklayer(AwesomeFreeMan):
         :param ctx_cookies:
         :return:
         """
-        page_link = self.URL_FREE_GAME_TEST if page_link is None else page_link
         ctx_cookies = (
             self.cookie_manager.load_ctx_cookies() if ctx_cookies is None else ctx_cookies
         )

@@ -73,7 +73,7 @@ class ArmorUtils(ArmorCaptcha):
         :param ctx:
         :return: True：已进入人机验证页面，False：跳转到个人主页
         """
-        threshold_timeout = 35
+        threshold_timeout = 32
         start = time.time()
         flag_ = ctx.current_url
         while True:
@@ -308,13 +308,17 @@ class ArmorUtils(ArmorCaptcha):
                     break
                 # 断言超时
                 if index == 1 and result is False:
-                    ctx.switch_to.default_content()
-                    return False
+                    raise TimeoutException
+        # 提交结果断言超时或 mark_samples() 等待超时
+        except TimeoutException:
+            ctx.switch_to.default_content()
+            return False
+        # 捕获重置挑战的请求信号
         except ChallengeReset:
             ctx.switch_to.default_content()
             return self.anti_hcaptcha(ctx, door=door)
+        # 回到主线剧情
         else:
-            # 回到主线剧情
             ctx.switch_to.default_content()
             return True
 
@@ -329,6 +333,47 @@ class AssertUtils:
     GAME_OK = "🛴 已在库"
     GAME_PENDING = "👀 待认领"
     GAME_CLAIM = "💰 领取成功"
+
+    @staticmethod
+    def login_error(ctx: Chrome) -> bool:
+        """登录失败 可能原因为账号或密码错误"""
+
+        threshold_timeout = 3
+        start = time.time()
+
+        while True:
+            # "任务超时：网络响应过慢"
+            if time.time() - start > threshold_timeout:
+                return False
+
+            # 提交按钮正在响应或界面弹出人机挑战
+            try:
+                submit_button = ctx.find_element(By.ID, "sign-in")
+                status_obj = submit_button.get_attribute("tabindex")
+                if status_obj == "-1":
+                    continue
+            except (AttributeError, WebDriverException):
+                pass
+
+            # 登录页面遭遇 Alert，可能原因为：
+            # - 账号或密码无效；
+            # - Auth Response 异常；
+            # - 账号被锁定；
+            try:
+                h6_tags = ctx.find_elements(By.TAG_NAME, "h6")
+                if len(h6_tags) > 1:
+                    return True
+                return False
+            except NoSuchElementException:
+                pass
+
+    @staticmethod
+    def get_login_error_msg(ctx) -> Optional[str]:
+        """获取登录页面的错误信息"""
+        try:
+            return ctx.find_element(By.XPATH, "//form//h6").text.strip()
+        except (WebDriverException, AttributeError):
+            return "null"
 
     @staticmethod
     def wrong_driver(ctx, msg: str):
@@ -598,10 +643,6 @@ class AwesomeFreeMan:
 
     # 操作对象参数
     URL_LOGIN = "https://www.epicgames.com/id/login/epic?lang=zh-CN"
-    URL_FREE_GAME_TEST = (
-        "https://www.epicgames.com/store/zh-CN/p/galactic-civilizations-iii"
-    )
-    URL_CHECK_COOKIE = "https://www.epicgames.com/store/zh-CN/"
     URL_ACCOUNT_PERSONAL = "https://www.epicgames.com/account/personal"
 
     def __init__(self):
@@ -619,14 +660,21 @@ class AwesomeFreeMan:
         self._armor = ArmorUtils()
         self.assert_ = AssertUtils()
 
-    @staticmethod
-    def _reset_page(ctx: Chrome, page_link: str, api_cookies):
-        ctx.get(page_link)
+    def _reset_page(self, ctx: Chrome, page_link: str, api_cookies):
+        ctx.get(self.URL_ACCOUNT_PERSONAL)
         for cookie_dict in api_cookies:
             try:
                 ctx.add_cookie(cookie_dict)
-            except InvalidCookieDomainException:
-                pass
+            except InvalidCookieDomainException as err:
+                logger.error(
+                    ToolBox.runtime_report(
+                        motive="SKIP",
+                        action_name=self.action_name,
+                        error=err.msg,
+                        domain=cookie_dict.get("domain", "null"),
+                        name=cookie_dict.get("name", "null"),
+                    )
+                )
         ctx.get(page_link)
 
     def _login(self, email: str, password: str, ctx: Chrome) -> None:
